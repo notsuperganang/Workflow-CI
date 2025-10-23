@@ -44,42 +44,40 @@ def train_model(X_train, X_test, y_train, y_test):
     # Enable MLflow autolog for scikit-learn
     mlflow.sklearn.autolog()
     
-    print("\nStarting MLflow run...")
+    print("\nStarting model training...")
+    print("(MLflow run automatically created by MLflow Project)")
     
-    with mlflow.start_run(run_name="RandomForest_Basic_Model"):
-        
-        print("Training Random Forest model...")
-        
-        # Create and train the model
-        model = RandomForestClassifier(
-            n_estimators=100,
-            random_state=42,
-            n_jobs=-1
-        )
-        
-        # Train the model
-        model.fit(X_train, y_train)
-        
-        # Make predictions
-        y_pred = model.predict(X_test)
-        
-        # Calculate metrics (autolog will also log these, but we print them)
-        accuracy = accuracy_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred, average='weighted')
-        recall = recall_score(y_test, y_pred, average='weighted')
-        f1 = f1_score(y_test, y_pred, average='weighted')
-        
-        print(f"\nModel Performance:")
-        print(f"Accuracy: {accuracy:.4f}")
-        print(f"Precision: {precision:.4f}")
-        print(f"Recall: {recall:.4f}")
-        print(f"F1-Score: {f1:.4f}")
-        
-        print("\nModel training completed successfully!")
-        print(f"Model and metrics saved to MLflow tracking URI: {mlflow.get_tracking_uri()}")
-        print(f"Run ID: {mlflow.active_run().info.run_id}")
-        
-        return model
+    # Create and train the model
+    model = RandomForestClassifier(
+        n_estimators=100,
+        random_state=42,
+        n_jobs=-1
+    )
+    
+    # Train the model
+    print("Training Random Forest model...")
+    model.fit(X_train, y_train)
+    
+    # Make predictions
+    y_pred = model.predict(X_test)
+    
+    # Calculate metrics (autolog will also log these, but we print them)
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, average='weighted')
+    recall = recall_score(y_test, y_pred, average='weighted')
+    f1 = f1_score(y_test, y_pred, average='weighted')
+    
+    print(f"\nModel Performance:")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"F1-Score: {f1:.4f}")
+    
+    print("\nModel training completed successfully!")
+    print(f"Model and metrics saved to MLflow tracking URI: {mlflow.get_tracking_uri()}")
+    
+    # Return model for potential further use
+    return model
 
 def main():
     """Main function to orchestrate the training process"""
