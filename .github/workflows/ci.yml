@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   workflow_dispatch:  # Manual trigger
 
+permissions:
+  contents: write  # allow github-actions[bot] to push commits
+
 env:
   DOCKER_IMAGE_NAME: notsuperganang/heart-disease-mlflow
   MLFLOW_TRACKING_URI: file:./mlruns
@@ -19,6 +22,10 @@ jobs:
     # Step 1: Checkout code
     - name: Checkout code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        persist-credentials: true
+        token: ${{ secrets.GITHUB_TOKEN }}
     
     # Step 2: Set up Python
     - name: Set up Python
@@ -134,6 +141,8 @@ jobs:
           cd ..
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+          # Ensure remote uses token for authentication
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git add artifacts/
           git diff --staged --quiet || git commit -m "chore: update model artifacts from run #${{ github.run_number }} [skip ci]"
           git push
