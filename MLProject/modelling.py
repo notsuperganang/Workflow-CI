@@ -11,12 +11,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import os
 
-# Set MLflow tracking URI (local storage)
-mlflow.set_tracking_uri("file:./mlruns")
-
-# Set experiment name
-mlflow.set_experiment("Heart_Disease_Prediction_Basic")
-
 def load_data():
     """Load preprocessed training and testing data"""
     print("Loading preprocessed data...")
@@ -45,7 +39,6 @@ def train_model(X_train, X_test, y_train, y_test):
     mlflow.sklearn.autolog()
     
     print("\nStarting model training...")
-    print("(MLflow run automatically created by MLflow Project)")
     
     # Create and train the model
     model = RandomForestClassifier(
