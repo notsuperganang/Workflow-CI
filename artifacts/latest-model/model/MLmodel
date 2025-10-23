@@ -15,8 +15,8 @@ flavors:
     sklearn_version: 1.5.2
 mlflow_version: 2.19.0
 model_size_bytes: 1778216
-model_uuid: 5e858c3fb6f54ab69e64b3e35cc5f6da
-run_id: 91bca265eb36491ea1a03beba788f719
+model_uuid: 348ed339654a4711a042e67ec47aaf09
+run_id: fca26624e60f4839acc70ddec5feffba
 signature:
   inputs: '[{"type": "double", "name": "Age", "required": true}, {"type": "long",
     "name": "Sex", "required": true}, {"type": "double", "name": "RestingBP", "required":
@@ -32,4 +32,4 @@ signature:
     "name": "RestingECG_ST", "required": true}]'
   outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
   params: null
-utc_time_created: '2025-10-23 16:41:44.905168'
+utc_time_created: '2025-10-23 16:44:22.897043'
