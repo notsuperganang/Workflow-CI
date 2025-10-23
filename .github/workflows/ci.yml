@@ -11,7 +11,7 @@ permissions:
   contents: write  # allow github-actions[bot] to push commits
 
 env:
-  DOCKER_IMAGE_NAME: notsuperganang/heart-disease-mlflow
+  DOCKER_IMAGE_NAME: ganangsetyohadii/heart-disease-mlflow
   MLFLOW_TRACKING_URI: file:./mlruns
 
 jobs:
