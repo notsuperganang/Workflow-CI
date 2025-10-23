@@ -2,7 +2,7 @@
 
 ## Docker Image Repository
 
-**Docker Hub URL:** https://hub.docker.com/r/notsuperganang/heart-disease-mlflow
+**Docker Hub URL:** https://hub.docker.com/repository/docker/ganangsetyohadii/heart-disease-mlflow
 
 ## Available Tags
 
