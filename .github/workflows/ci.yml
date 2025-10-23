@@ -63,21 +63,41 @@ jobs:
         echo "MLflow Run Artifacts"
         echo "============================================================"
         
-        # Find the latest run
-        RUN_DIR=$(find mlruns -type d -name "artifacts" | head -n 1 | xargs dirname)
-        echo "Latest run directory: $RUN_DIR"
+        # Find the latest run ID
+        RUN_ID=$(ls -t mlruns/0/ | grep -v "meta.yaml" | head -n 1)
+        echo "Latest Run ID: $RUN_ID"
         
-        if [ -d "$RUN_DIR/artifacts" ]; then
+        # Show full directory structure
+        echo ""
+        echo "Directory structure:"
+        ls -lhR mlruns/0/$RUN_ID/
+        
+        if [ -d "mlruns/0/$RUN_ID/artifacts" ]; then
           echo ""
-          echo "Artifacts found:"
-          ls -lh "$RUN_DIR/artifacts/"
+          echo "✅ Artifacts found:"
+          ls -lh "mlruns/0/$RUN_ID/artifacts/"
           
-          # Display model info
-          if [ -f "$RUN_DIR/artifacts/model/MLmodel" ]; then
+          # Check if model exists
+          if [ -d "mlruns/0/$RUN_ID/artifacts/model" ]; then
             echo ""
-            echo "Model metadata:"
-            cat "$RUN_DIR/artifacts/model/MLmodel"
+            echo "✅ Model directory found:"
+            ls -lh "mlruns/0/$RUN_ID/artifacts/model/"
+            
+            # Display model metadata
+            if [ -f "mlruns/0/$RUN_ID/artifacts/model/MLmodel" ]; then
+              echo ""
+              echo "Model metadata (MLmodel):"
+              cat "mlruns/0/$RUN_ID/artifacts/model/MLmodel"
+            fi
+          else
+            echo ""
+            echo "❌ WARNING: Model directory not found!"
+            echo "This may cause issues in Docker build step."
           fi
+        else
+          echo ""
+          echo "❌ ERROR: No artifacts found!"
+          exit 1
         fi
     
     # Step 7 (SKILLED): Upload artifacts to GitHub
@@ -98,14 +118,14 @@ jobs:
         # Create artifacts directory
         mkdir -p ../artifacts
         
-        # Find latest run and copy artifacts
-        RUN_DIR=$(find mlruns -type d -name "artifacts" | head -n 1 | xargs dirname)
+        # Find latest run ID
+        RUN_ID=$(ls -t mlruns/0/ | grep -v "meta.yaml" | head -n 1)
         
-        if [ -d "$RUN_DIR/artifacts/model" ]; then
-          cp -r "$RUN_DIR/artifacts/model" ../artifacts/latest-model
+        if [ -d "mlruns/0/$RUN_ID/artifacts/model" ]; then
+          cp -r "mlruns/0/$RUN_ID/artifacts/model" ../artifacts/latest-model
           
           # Create metadata file
-          echo "Run ID: $(basename $RUN_DIR)" > ../artifacts/metadata.txt
+          echo "Run ID: $RUN_ID" > ../artifacts/metadata.txt
           echo "Timestamp: $(date)" >> ../artifacts/metadata.txt
           echo "Commit: ${{ github.sha }}" >> ../artifacts/metadata.txt
           echo "Run Number: ${{ github.run_number }}" >> ../artifacts/metadata.txt
@@ -130,18 +150,31 @@ jobs:
         echo "Building Docker Image with MLflow"
         echo "============================================================"
         
-        # Find the latest run
-        RUN_DIR=$(find mlruns -type d -name "artifacts" | head -n 1 | xargs dirname)
-        RUN_ID=$(basename $RUN_DIR)
+        # Set MLflow tracking URI
+        export MLFLOW_TRACKING_URI=file:$(pwd)/mlruns
+        
+        # Find the latest run ID
+        RUN_ID=$(ls -t mlruns/0/ | grep -v "meta.yaml" | head -n 1)
         
         echo "Run ID: $RUN_ID"
-        echo "Model path: $RUN_DIR/artifacts/model"
+        echo "MLflow Tracking URI: $MLFLOW_TRACKING_URI"
         
-        # Build docker image using mlflow
+        # Verify model exists
+        MODEL_PATH="mlruns/0/$RUN_ID/artifacts/model"
+        if [ -d "$MODEL_PATH" ]; then
+          echo "✅ Model found at: $MODEL_PATH"
+          ls -lh "$MODEL_PATH"
+        else
+          echo "❌ Model not found at: $MODEL_PATH"
+          echo "Available artifacts:"
+          find mlruns -name "model" -type d
+          exit 1
+        fi
+        
+        # Build docker image using mlflow with runs:/ URI
         mlflow models build-docker \
-          --model-uri "$RUN_DIR/artifacts/model" \
-          --name "${{ env.DOCKER_IMAGE_NAME }}:${{ github.run_number }}" \
-          --enable-mlserver
+          --model-uri "runs:/$RUN_ID/model" \
+          --name "${{ env.DOCKER_IMAGE_NAME }}:${{ github.run_number }}"
         
         # Also tag as latest
         docker tag "${{ env.DOCKER_IMAGE_NAME }}:${{ github.run_number }}" "${{ env.DOCKER_IMAGE_NAME }}:latest"
