@@ -40,7 +40,8 @@ jobs:
       run: |
         echo "Installing MLflow and required packages..."
         pip install mlflow==2.19.0
-        pip install scikit-learn==1.7.2 pandas==2.1.4 numpy==1.26.2
+        # Pin scikit-learn to a version compatible with MLflow 2.19 autolog
+        pip install scikit-learn==1.5.2 pandas==2.1.4 numpy==1.26.2
         echo "✅ Dependencies installed"
     
     # Step 5: Run MLflow Project
@@ -63,14 +64,14 @@ jobs:
         echo "MLflow Run Artifacts"
         echo "============================================================"
         
-        # Find the latest run ID
-        RUN_ID=$(ls -t mlruns/0/ | grep -v "meta.yaml" | head -n 1)
-        echo "Latest Run ID: $RUN_ID"
+        # Find the latest actual run directory (exclude 'datasets', match 32-hex IDs)
+        RUN_ID=$(find mlruns/0 -maxdepth 1 -type d -regextype posix-extended -regex '.*/[0-9a-f]{32}$' -exec stat -c '%Y %n' {} \; | sort -nr | head -n1 | awk '{print $2}' | xargs basename)
+        echo "Latest Run ID (detected): $RUN_ID"
         
         # Show full directory structure
         echo ""
         echo "Directory structure:"
-        ls -lhR mlruns/0/$RUN_ID/
+        ls -lhR mlruns/0/$RUN_ID/ || true
         
         if [ -d "mlruns/0/$RUN_ID/artifacts" ]; then
           echo ""
@@ -118,8 +119,8 @@ jobs:
         # Create artifacts directory
         mkdir -p ../artifacts
         
-        # Find latest run ID
-        RUN_ID=$(ls -t mlruns/0/ | grep -v "meta.yaml" | head -n 1)
+        # Find latest actual run ID (exclude datasets)
+        RUN_ID=$(find mlruns/0 -maxdepth 1 -type d -regextype posix-extended -regex '.*/[0-9a-f]{32}$' -exec stat -c '%Y %n' {} \; | sort -nr | head -n1 | awk '{print $2}' | xargs basename)
         
         if [ -d "mlruns/0/$RUN_ID/artifacts/model" ]; then
           cp -r "mlruns/0/$RUN_ID/artifacts/model" ../artifacts/latest-model
@@ -150,14 +151,9 @@ jobs:
         echo "Building Docker Image with MLflow"
         echo "============================================================"
         
-        # Set MLflow tracking URI
-        export MLFLOW_TRACKING_URI=file:$(pwd)/mlruns
-        
-        # Find the latest run ID
-        RUN_ID=$(ls -t mlruns/0/ | grep -v "meta.yaml" | head -n 1)
-        
+        # Find the latest actual run ID (exclude datasets)
+        RUN_ID=$(find mlruns/0 -maxdepth 1 -type d -regextype posix-extended -regex '.*/[0-9a-f]{32}$' -exec stat -c '%Y %n' {} \; | sort -nr | head -n1 | awk '{print $2}' | xargs basename)
         echo "Run ID: $RUN_ID"
-        echo "MLflow Tracking URI: $MLFLOW_TRACKING_URI"
         
         # Verify model exists
         MODEL_PATH="mlruns/0/$RUN_ID/artifacts/model"
@@ -166,8 +162,8 @@ jobs:
           ls -lh "$MODEL_PATH"
         else
           echo "❌ Model not found at: $MODEL_PATH"
-          echo "Available artifacts:"
-          find mlruns -name "model" -type d
+          echo "Available model directories under mlruns:"
+          find mlruns -type d -name model || true
           exit 1
         fi
         
