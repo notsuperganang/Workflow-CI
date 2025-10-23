@@ -170,20 +170,20 @@ random_state: 42        # Random seed for reproducibility
 
 - **GitHub Repository:** [Add your repo URL]
 - **GitHub Actions:** [Add your actions URL]
-- **Docker Hub:** https://hub.docker.com/r/notsuperganang/heart-disease-mlflow
+- **Docker Hub:** https://hub.docker.com/r/ganangsetyohadii/heart-disease-mlflow
 
 ## 🐳 Docker Deployment
 
 ### Pull Docker Image
 
 ```bash
-docker pull notsuperganang/heart-disease-mlflow:latest
+docker pull ganangsetyohadii/heart-disease-mlflow:latest
 ```
 
 ### Run Model Server
 
 ```bash
-docker run -p 5000:8080 notsuperganang/heart-disease-mlflow:latest
+docker run -p 5000:8080 ganangsetyohadii/heart-disease-mlflow:latest
 ```
 
 ### Test Model Inference
