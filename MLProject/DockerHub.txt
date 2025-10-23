@@ -1,0 +1,43 @@
+# Docker Hub Link
+
+## Docker Image Repository
+
+**Docker Hub URL:** https://hub.docker.com/r/notsuperganang/heart-disease-mlflow
+
+## Available Tags
+
+- `latest` - Latest trained model
+- `[run-number]` - Specific CI/CD run version
+
+## Pull Image
+
+```bash
+docker pull notsuperganang/heart-disease-mlflow:latest
+```
+
+## Run Inference Server
+
+```bash
+docker run -p 5000:8080 notsuperganang/heart-disease-mlflow:latest
+```
+
+Then access the model at: `http://localhost:5000/invocations`
+
+## Model Details
+
+- **Framework:** Scikit-Learn (Random Forest)
+- **MLflow Version:** 2.19.0
+- **Python Version:** 3.12.7
+- **Built with:** MLflow `build-docker` command
+
+## CI/CD Integration
+
+This Docker image is automatically built and pushed by GitHub Actions on every push to the `main` branch.
+
+Workflow: `.github/workflows/ci.yml`
+
+## Notes
+
+- Image is built using `mlflow models build-docker`
+- Includes MLServer for model serving
+- Ready for deployment in production

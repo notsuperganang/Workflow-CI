@@ -1,0 +1,13 @@
+name: heart_disease_mlflow_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12.7
+  - pip
+  - pip:
+      - mlflow==2.19.0
+      - scikit-learn==1.7.2
+      - pandas==2.1.4
+      - numpy==1.26.2
+      - cloudpickle==3.1.1

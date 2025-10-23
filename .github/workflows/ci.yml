@@ -1,0 +1,196 @@
+name: MLflow CI/CD Pipeline - Advanced
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Manual trigger
+
+env:
+  DOCKER_IMAGE_NAME: notsuperganang/heart-disease-mlflow
+  MLFLOW_TRACKING_URI: file:./mlruns
+
+jobs:
+  train-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Step 1: Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    # Step 2: Set up Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12.7'
+    
+    # Step 3: Install Conda
+    - name: Install Conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        python-version: '3.12.7'
+        activate-environment: mlflow-env
+    
+    # Step 4: Install MLflow and dependencies
+    - name: Install MLflow and Dependencies
+      shell: bash -l {0}
+      run: |
+        echo "Installing MLflow and required packages..."
+        pip install mlflow==2.19.0
+        pip install scikit-learn==1.7.2 pandas==2.1.4 numpy==1.26.2
+        echo "✅ Dependencies installed"
+    
+    # Step 5: Run MLflow Project
+    - name: Run MLflow Project Training
+      shell: bash -l {0}
+      run: |
+        echo "============================================================"
+        echo "Starting MLflow Project Training"
+        echo "============================================================"
+        cd MLProject
+        mlflow run . --env-manager=local
+        echo "✅ Training completed successfully!"
+    
+    # Step 6: List MLflow artifacts
+    - name: List MLflow Artifacts
+      shell: bash -l {0}
+      run: |
+        cd MLProject
+        echo "============================================================"
+        echo "MLflow Run Artifacts"
+        echo "============================================================"
+        
+        # Find the latest run
+        RUN_DIR=$(find mlruns -type d -name "artifacts" | head -n 1 | xargs dirname)
+        echo "Latest run directory: $RUN_DIR"
+        
+        if [ -d "$RUN_DIR/artifacts" ]; then
+          echo ""
+          echo "Artifacts found:"
+          ls -lh "$RUN_DIR/artifacts/"
+          
+          # Display model info
+          if [ -f "$RUN_DIR/artifacts/model/MLmodel" ]; then
+            echo ""
+            echo "Model metadata:"
+            cat "$RUN_DIR/artifacts/model/MLmodel"
+          fi
+        fi
+    
+    # Step 7 (SKILLED): Upload artifacts to GitHub
+    - name: Upload Model Artifacts to GitHub
+      uses: actions/upload-artifact@v4
+      with:
+        name: mlflow-model-${{ github.run_number }}
+        path: |
+          MLProject/mlruns/
+        retention-days: 30
+    
+    # Step 8 (SKILLED): Commit artifacts to repository (optional)
+    - name: Commit Model Artifacts to Repository
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        cd MLProject
+        
+        # Create artifacts directory
+        mkdir -p ../artifacts
+        
+        # Find latest run and copy artifacts
+        RUN_DIR=$(find mlruns -type d -name "artifacts" | head -n 1 | xargs dirname)
+        
+        if [ -d "$RUN_DIR/artifacts/model" ]; then
+          cp -r "$RUN_DIR/artifacts/model" ../artifacts/latest-model
+          
+          # Create metadata file
+          echo "Run ID: $(basename $RUN_DIR)" > ../artifacts/metadata.txt
+          echo "Timestamp: $(date)" >> ../artifacts/metadata.txt
+          echo "Commit: ${{ github.sha }}" >> ../artifacts/metadata.txt
+          echo "Run Number: ${{ github.run_number }}" >> ../artifacts/metadata.txt
+          
+          cd ..
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add artifacts/
+          git diff --staged --quiet || git commit -m "chore: update model artifacts from run #${{ github.run_number }} [skip ci]"
+          git push
+          
+          echo "✅ Artifacts committed to repository"
+        fi
+    
+    # Step 9 (ADVANCED): Build Docker Image with MLflow
+    - name: Build Docker Image with MLflow
+      shell: bash -l {0}
+      run: |
+        cd MLProject
+        
+        echo "============================================================"
+        echo "Building Docker Image with MLflow"
+        echo "============================================================"
+        
+        # Find the latest run
+        RUN_DIR=$(find mlruns -type d -name "artifacts" | head -n 1 | xargs dirname)
+        RUN_ID=$(basename $RUN_DIR)
+        
+        echo "Run ID: $RUN_ID"
+        echo "Model path: $RUN_DIR/artifacts/model"
+        
+        # Build docker image using mlflow
+        mlflow models build-docker \
+          --model-uri "$RUN_DIR/artifacts/model" \
+          --name "${{ env.DOCKER_IMAGE_NAME }}:${{ github.run_number }}" \
+          --enable-mlserver
+        
+        # Also tag as latest
+        docker tag "${{ env.DOCKER_IMAGE_NAME }}:${{ github.run_number }}" "${{ env.DOCKER_IMAGE_NAME }}:latest"
+        
+        echo "✅ Docker image built successfully!"
+        echo ""
+        echo "Docker images:"
+        docker images | grep heart-disease-mlflow
+    
+    # Step 10 (ADVANCED): Login to Docker Hub
+    - name: Login to Docker Hub
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    # Step 11 (ADVANCED): Push Docker Image to Docker Hub
+    - name: Push to Docker Hub
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        echo "============================================================"
+        echo "Pushing Docker Image to Docker Hub"
+        echo "============================================================"
+        
+        docker push "${{ env.DOCKER_IMAGE_NAME }}:${{ github.run_number }}"
+        docker push "${{ env.DOCKER_IMAGE_NAME }}:latest"
+        
+        echo "✅ Docker images pushed to Docker Hub!"
+        echo ""
+        echo "Docker Hub: https://hub.docker.com/r/${{ env.DOCKER_IMAGE_NAME }}"
+    
+    # Step 12: Generate Summary Report
+    - name: Generate Summary Report
+      shell: bash -l {0}
+      run: |
+        cd MLProject
+        
+        echo "============================================================"
+        echo "📊 CI/CD Pipeline Summary"
+        echo "============================================================"
+        echo ""
+        echo "🎯 Training: ✅ Completed"
+        echo "📦 Artifacts: ✅ Uploaded to GitHub"
+        echo "💾 Repository: ✅ Committed (if main branch)"
+        echo "🐳 Docker: ✅ Built and pushed (if main branch)"
+        echo ""
+        echo "🔗 Links:"
+        echo "  • Artifacts: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        echo "  • Docker Hub: https://hub.docker.com/r/${{ env.DOCKER_IMAGE_NAME }}"
+        echo ""
+        echo "============================================================"
