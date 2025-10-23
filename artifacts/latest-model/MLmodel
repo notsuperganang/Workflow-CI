@@ -1,0 +1,35 @@
+artifact_path: model
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.12.7
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.5.2
+mlflow_version: 2.19.0
+model_size_bytes: 1778216
+model_uuid: 8b361c27635f4c12999e21469688b822
+run_id: 44625dd39ff0400bb3be06084b959fb9
+signature:
+  inputs: '[{"type": "double", "name": "Age", "required": true}, {"type": "long",
+    "name": "Sex", "required": true}, {"type": "double", "name": "RestingBP", "required":
+    true}, {"type": "double", "name": "Cholesterol", "required": true}, {"type": "long",
+    "name": "FastingBS", "required": true}, {"type": "double", "name": "MaxHR", "required":
+    true}, {"type": "long", "name": "ExerciseAngina", "required": true}, {"type":
+    "double", "name": "Oldpeak", "required": true}, {"type": "long", "name": "ST_Slope",
+    "required": true}, {"type": "long", "name": "ChestPainType_ASY", "required": true},
+    {"type": "long", "name": "ChestPainType_ATA", "required": true}, {"type": "long",
+    "name": "ChestPainType_NAP", "required": true}, {"type": "long", "name": "ChestPainType_TA",
+    "required": true}, {"type": "long", "name": "RestingECG_LVH", "required": true},
+    {"type": "long", "name": "RestingECG_Normal", "required": true}, {"type": "long",
+    "name": "RestingECG_ST", "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+  params: null
+utc_time_created: '2025-10-23 15:59:55.426895'
